@@ -1,0 +1,16 @@
+{
+  "name": "pwc_backend_auth",
+  "version": "1.0.0",
+  "description": "authorizer using AWS rekognition, serverless functions",
+  "scripts": {
+    "package": "sam package --profile ${PROFILE} --template-file template.yml --output-template-file package.yml --s3-bucket ${S3_BUCKET_NAME}",
+    "deploy": "sam deploy --profile ${PROFILE} --template-file package.yml --capabilities CAPABILITY_IAM --stack-name ${STACK_NAME} --parameter-overrides CollectionName=${COLLECTION_NAME} UserPoolName=${USER_POOL_NAME} DocumentUploadBucketName=${SIGN_UP_S3_BUCKET} SignInUploadBucketName=${SIGN_IN_S3_BUCKET}",
+    "check-env": "if [ -e ${S3_BUCKET_NAME} ] || [ -e ${USER_POOL_NAME} ] || [ -e ${STACK_NAME} ] || [ -e ${PROFILE} ]; then exit 1; fi",
+    "bd": "npm run check-env && npm run package && npm run deploy"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.1691.0"
+  }
+}
