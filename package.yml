@@ -1,0 +1,302 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  UserPoolName:
+    Type: String
+    Description: The name you want the Amazon Cognito User Pool to be created with
+  CollectionName:
+    Type: String
+    Description: The custom Amazon Rekognition collection to index user faces
+  DocumentUploadBucketName:
+    Type: String
+    Description: The S3 bucket name for uploading custom documents when users sign
+      up
+  SignInUploadBucketName:
+    Type: String
+    Description: The S3 bucket name for uploading user photos when signing in for
+      comparison
+Globals:
+  Function:
+    Environment:
+      Variables:
+        COLLECTION_NAME:
+          Ref: CollectionName
+        BUCKET_SIGN_UP:
+          Ref: DocumentUploadBucketName
+Resources:
+  IndexFaces:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://pwc-backend-auth-sam/8001a796ddcab38c7aeeef8a08e2bd20
+      Handler: index-faces.handler
+      Runtime: python3.11
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - rekognition:IndexFaces
+          Resource: '*'
+    Metadata:
+      SamResourceId: IndexFaces
+  CreateRekognitionCollectionLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://pwc-backend-auth-sam/039bc3d177b3f44eaddbef79d028d417
+      Handler: create-collection.handler
+      Runtime: python3.11
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - rekognition:CreateCollection
+          - rekognition:DeleteCollection
+          Resource: '*'
+    Metadata:
+      SamResourceId: CreateRekognitionCollectionLambda
+  DefineAuthChallenge:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://pwc-backend-auth-sam/9620500509c4802301c832522a92868e
+      Handler: define-auth-challenge.handler
+      Runtime: nodejs20.x
+    Metadata:
+      SamResourceId: DefineAuthChallenge
+  CreateAuthChallenge:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://pwc-backend-auth-sam/3f50a273c49aedd57af66bc4de9b7749
+      Handler: create-auth-challenge.handler
+      Runtime: nodejs20.x
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:Query
+          Resource: '*'
+    Metadata:
+      SamResourceId: CreateAuthChallenge
+  VerifyAuthChallengeResponse:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://pwc-backend-auth-sam/bf1ab977ba513ec8143f388f4810f6fc
+      Handler: verify-auth-challenge-response.handler
+      Runtime: nodejs20.x
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:getObject
+          - rekognition:SearchFacesByImage
+          Resource: '*'
+    Metadata:
+      SamResourceId: VerifyAuthChallengeResponse
+  PreSignUp:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://pwc-backend-auth-sam/d95e374b346c9a42639cbbd2fd9c15ab
+      Handler: pre-sign-up.handler
+      Runtime: nodejs20.x
+    Metadata:
+      SamResourceId: PreSignUp
+  RekognitionCollection:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - CreateRekognitionCollectionLambda
+        - Arn
+    Metadata:
+      SamResourceId: RekognitionCollection
+  BucketSignUp:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Ref: DocumentUploadBucketName
+    Metadata:
+      SamResourceId: BucketSignUp
+  BucketSignIn:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Ref: SignInUploadBucketName
+    Metadata:
+      SamResourceId: BucketSignIn
+  CollectionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: RekognitionId
+        AttributeType: S
+      - AttributeName: FullName
+        AttributeType: S
+      KeySchema:
+      - AttributeName: RekognitionId
+        KeyType: HASH
+      - AttributeName: FullName
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: FullName-index
+        KeySchema:
+        - AttributeName: FullName
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName:
+        Ref: CollectionName
+    Metadata:
+      SamResourceId: CollectionTable
+  DefineAuthChallengeInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+        - DefineAuthChallenge
+        - Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - UserPool
+        - Arn
+    Metadata:
+      SamResourceId: DefineAuthChallengeInvocationPermission
+  CreateAuthChallengeInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+        - CreateAuthChallenge
+        - Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - UserPool
+        - Arn
+    Metadata:
+      SamResourceId: CreateAuthChallengeInvocationPermission
+  VerifyAuthChallengeResponseInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+        - VerifyAuthChallengeResponse
+        - Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - UserPool
+        - Arn
+    Metadata:
+      SamResourceId: VerifyAuthChallengeResponseInvocationPermission
+  PreSignUpInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+        - PreSignUp
+        - Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - UserPool
+        - Arn
+    Metadata:
+      SamResourceId: PreSignUpInvocationPermission
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName:
+        Ref: UserPoolName
+      Schema:
+      - Name: name
+        AttributeDataType: String
+        Mutable: true
+        Required: true
+      - Name: email
+        AttributeDataType: String
+        Mutable: true
+        Required: true
+      - Name: s3-image-object
+        AttributeDataType: String
+        Mutable: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: false
+      UsernameAttributes:
+      - email
+      MfaConfiguration: 'OFF'
+      LambdaConfig:
+        CreateAuthChallenge:
+          Fn::GetAtt:
+          - CreateAuthChallenge
+          - Arn
+        DefineAuthChallenge:
+          Fn::GetAtt:
+          - DefineAuthChallenge
+          - Arn
+        PreSignUp:
+          Fn::GetAtt:
+          - PreSignUp
+          - Arn
+        VerifyAuthChallengeResponse:
+          Fn::GetAtt:
+          - VerifyAuthChallengeResponse
+          - Arn
+    Metadata:
+      SamResourceId: UserPool
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: rekognition-auth-client
+      GenerateSecret: false
+      UserPoolId:
+        Ref: UserPool
+      ExplicitAuthFlows:
+      - CUSTOM_AUTH_FLOW_ONLY
+    Metadata:
+      SamResourceId: UserPoolClient
+Outputs:
+  RekognitionCollectionArn:
+    Description: The Amazon Rekognition Custom Collection ARN.
+    Value:
+      Fn::GetAtt:
+      - RekognitionCollection
+      - Message
+  SignUpBucketName:
+    Value:
+      Ref: BucketSignUp
+    Description: Name of the sign up Amazon S3 bucket.
+  SignInBucketName:
+    Value:
+      Ref: BucketSignIn
+    Description: Name of the sign in Amazon S3 bucket.
+  TableName:
+    Value:
+      Ref: CollectionTable
+    Description: Name of the DynamoDB table containing Rekognition metadata for each
+      Cognito user
+  UserPoolId:
+    Value:
+      Ref: UserPool
+    Description: ID of the Cognito User Pool
+  UserPoolWebClientId:
+    Value:
+      Ref: UserPoolClient
+    Description: ID of the Cognito User Pool Client for Front-End Subscription
