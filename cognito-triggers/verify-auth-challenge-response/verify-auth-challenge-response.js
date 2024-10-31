@@ -1,8 +1,8 @@
-import AWS from 'aws-sdk';
+const AWS = require('aws-sdk');
 
 const rekognition = new AWS.Rekognition();
 
-export const handler = async (event, context) => {
+const handler = async (event, context) => {
 	console.log("Verify Auth Challenge: " + JSON.stringify(event));
 	let userPhoto = '';
 	event.response.answerCorrect = false;
@@ -13,13 +13,15 @@ export const handler = async (event, context) => {
 		CollectionId: process.env.COLLECTION_NAME,
 		Image: {
 			S3Object: {
-				Bucket: process.env.BUCKET_SIGN_UP,
+				Bucket: process.env.BUCKET_SIGN_IN,
 				Name: objectName
 			}
 		},
 		MaxFaces: 1,
 		FaceMatchThreshold: 90
 	};
+
+	console.log(params);
 
 	try {
 		const data = await rekognition.searchFacesByImage(params).promise();
@@ -42,3 +44,5 @@ export const handler = async (event, context) => {
 
 	return event;
 };
+
+exports.handler = handler;

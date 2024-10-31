@@ -1,4 +1,4 @@
-export const handler = async (event, context) => {
+const handler = async (event, context) => {
 	console.log("Define Auth Challenge: " + JSON.stringify(event));
 
 	if (event.request.session &&
@@ -28,3 +28,5 @@ export const handler = async (event, context) => {
 
 	return event;
 };
+
+exports.handler = handler;

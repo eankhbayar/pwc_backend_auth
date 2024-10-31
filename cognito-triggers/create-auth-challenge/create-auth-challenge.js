@@ -1,8 +1,8 @@
-import AWS from 'aws-sdk';
+const AWS = require('aws-sdk');
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-export const handler = async (event, context) => {
+const handler = async (event, context) => {
 	console.log("Create auth challenge: " + JSON.stringify(event));
 
 	if (event.request.challengeName === 'CUSTOM_CHALLENGE') {
@@ -41,3 +41,5 @@ export const handler = async (event, context) => {
 
 	return event;
 };
+
+exports.handler = handler;

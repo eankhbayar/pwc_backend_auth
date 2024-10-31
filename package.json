@@ -12,5 +12,6 @@
   "license": "MIT",
   "dependencies": {
     "aws-sdk": "^2.1691.0"
-  }
+  },
+  "type": "module"
 }

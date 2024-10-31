@@ -27,9 +27,10 @@ Resources:
   IndexFaces:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://pwc-backend-auth-sam/8001a796ddcab38c7aeeef8a08e2bd20
+      CodeUri: s3://pwc-backend-auth-sam/e23278befadaca47335f81cea26fc776
       Handler: index-faces.handler
       Runtime: python3.11
+      Role: arn:aws:iam::034362054428:role/backend
       Policies:
       - Version: '2012-10-17'
         Statement:
@@ -44,6 +45,7 @@ Resources:
     Properties:
       CodeUri: s3://pwc-backend-auth-sam/039bc3d177b3f44eaddbef79d028d417
       Handler: create-collection.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: python3.11
       Policies:
       - Version: '2012-10-17'
@@ -58,7 +60,8 @@ Resources:
   DefineAuthChallenge:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://pwc-backend-auth-sam/9620500509c4802301c832522a92868e
+      CodeUri: s3://pwc-backend-auth-sam/4c6a5506a38209c6f81802feeb22d4cb
+      Role: arn:aws:iam::034362054428:role/backend
       Handler: define-auth-challenge.handler
       Runtime: nodejs20.x
     Metadata:
@@ -66,8 +69,9 @@ Resources:
   CreateAuthChallenge:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://pwc-backend-auth-sam/3f50a273c49aedd57af66bc4de9b7749
+      CodeUri: s3://pwc-backend-auth-sam/a5385fcb54264d5a418fb711b77d5947
       Handler: create-auth-challenge.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: nodejs20.x
       Policies:
       - Version: '2012-10-17'
@@ -81,8 +85,9 @@ Resources:
   VerifyAuthChallengeResponse:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://pwc-backend-auth-sam/bf1ab977ba513ec8143f388f4810f6fc
+      CodeUri: s3://pwc-backend-auth-sam/75aafd0c939a653e8a53c477e94b375b
       Handler: verify-auth-challenge-response.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: nodejs20.x
       Policies:
       - Version: '2012-10-17'
@@ -97,8 +102,9 @@ Resources:
   PreSignUp:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://pwc-backend-auth-sam/d95e374b346c9a42639cbbd2fd9c15ab
+      CodeUri: s3://pwc-backend-auth-sam/f8b9ca4c8b492e10a4a7a9c4852e0b67
       Handler: pre-sign-up.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: nodejs20.x
     Metadata:
       SamResourceId: PreSignUp

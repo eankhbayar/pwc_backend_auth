@@ -29,6 +29,7 @@ Resources:
       CodeUri: rekognition/index-faces/
       Handler: index-faces.handler
       Runtime: python3.11
+      Role: arn:aws:iam::034362054428:role/backend
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -42,6 +43,7 @@ Resources:
     Properties:
       CodeUri: rekognition/create-collection/create-collection.zip  # Path to your ZIP file
       Handler: create-collection.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: python3.11
       Policies:
         - Version: "2012-10-17"
@@ -56,6 +58,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cognito-triggers/define-auth-challenge/
+      Role: arn:aws:iam::034362054428:role/backend
       Handler: define-auth-challenge.handler
       Runtime: nodejs20.x
 
@@ -64,6 +67,7 @@ Resources:
     Properties:
       CodeUri: cognito-triggers/create-auth-challenge/
       Handler: create-auth-challenge.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: nodejs20.x
       Policies:
         - Version: "2012-10-17"
@@ -78,6 +82,7 @@ Resources:
     Properties:
       CodeUri: cognito-triggers/verify-auth-challenge-response/
       Handler: verify-auth-challenge-response.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: nodejs20.x
       Policies:
         - Version: "2012-10-17"
@@ -87,15 +92,15 @@ Resources:
                 - s3:getObject
                 - rekognition:SearchFacesByImage
               Resource: "*"
-      
 
   PreSignUp:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cognito-triggers/pre-sign-up/
       Handler: pre-sign-up.handler
+      Role: arn:aws:iam::034362054428:role/backend
       Runtime: nodejs20.x
-  
+
   RekognitionCollection:
     Type: Custom::CustomResource
     Properties:
